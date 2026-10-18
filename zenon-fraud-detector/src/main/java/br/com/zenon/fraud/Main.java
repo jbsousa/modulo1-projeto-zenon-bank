@@ -2,6 +2,8 @@ package br.com.zenon.fraud;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static br.com.zenon.fraud.TransactionType.*;
 
@@ -61,6 +63,33 @@ public class Main {
 
         IO.println("5. Fraudes por Tipo:");
         fraudAnalyzer.countFraudsByTypes().forEach((type, count) -> IO.println(" - %s: %d".formatted(type, count)));
+
+        IO.println("----------------------------------------------------------------------------------------------------");
+
+        TransactionRepository transactionRepository = new TransactionListRepository(transactions);
+
+        String notFoundOriginName = "C12345";
+        String existsOriginName = "C1868032458";
+
+        transactionRepository.findByOriginName(notFoundOriginName)
+                .ifPresentOrElse(IO::println, () -> IO.println("Transacão não encontrada para " + notFoundOriginName));
+
+        long startTimeList = System.nanoTime();
+        transactionRepository.findByOriginName(existsOriginName)
+                .ifPresentOrElse(IO::println, () -> IO.println("Transação não encontrada para " + existsOriginName));
+        long endTimeList = System.nanoTime();
+        IO.println("Tempo de busca - List (ms): " + (endTimeList - startTimeList) / 1_000_000.0);
+
+        transactionRepository = new TransactionMapRepository(transactions);
+
+        long startTimeMap = System.nanoTime();
+        transactionRepository.findByOriginName(existsOriginName)
+                .ifPresentOrElse(IO::println, () -> IO.println("Transacão não encontrada para " + existsOriginName));
+
+        long endTimeMap = System.nanoTime();
+
+        IO.println("Tempo de busca - Map (ms): " + (endTimeMap - startTimeMap) / 1_000_000.0);
+
 
     }
 }
