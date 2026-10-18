@@ -36,5 +36,13 @@ public class Main {
                 .limit(10)
                 .forEach(IO::println);
 
+        IO.println("----------------------------------------------------------------------------------------------------");
+
+        List<Transaction> transactionsBadData = new TransactionIngestor().read("data/paysim_with_bad_data.csv");
+
+        IO.println(transactionsBadData.size());
+
+        transactionsBadData.forEach(IO::println);
+
     }
 }

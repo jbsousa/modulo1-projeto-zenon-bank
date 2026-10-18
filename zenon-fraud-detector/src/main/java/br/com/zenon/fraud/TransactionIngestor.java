@@ -1,14 +1,10 @@
 package br.com.zenon.fraud;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class TransactionIngestor {
 
@@ -21,25 +17,51 @@ public class TransactionIngestor {
                 .skip(1)
                 .limit(1000)
                 .map(this::parseTransaction)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .toList();
 
         }
         catch (Exception e) {
-            throw new RuntimeException("Erro ao ler arquivo " + filename);
+            throw new RuntimeException("Erro ao ler arquivo " + filename, e);
         }
     }
 
-    private Transaction parseTransaction(String line) {
-        String[] chunks = line.split(",");
-        int step = Integer.parseInt(chunks[0]);
-        TransactionType transactionType = TransactionType.valueOf(chunks[1]);
-        BigDecimal amount = new BigDecimal(chunks[2]);
-        Customer origin = new Customer(chunks[3], new BigDecimal(chunks[4]), new BigDecimal(chunks[5]));
-        Customer recipient = new Customer(chunks[6], new BigDecimal(chunks[7]), new BigDecimal(chunks[8]));
-        boolean isFraud = "1".equals(chunks[9]);
-        boolean isFlaggedFraud = "1".equals(chunks[10]);
+    private Optional<Transaction> parseTransaction(String line) {
+        try {
+            String[] chunks = line.split(",");
+            int step = Integer.parseInt(chunks[0]);
+            TransactionType transactionType = TransactionType.valueOf(chunks[1]);
 
-        return new Transaction(step, transactionType, amount, origin, recipient, isFraud, isFlaggedFraud);
+            if(chunks[2] == null || chunks[2].isEmpty())
+                throw new IllegalArgumentException("O valor de amount não pode ser nulo nem vazio");
+            BigDecimal amount = new BigDecimal(chunks[2]);
+
+            if(chunks[4] == null || chunks[4].isEmpty())
+                throw new IllegalArgumentException("O valor de oldbalanceOrg não pode ser nulo nem vazio");
+
+            if(chunks[5] == null || chunks[5].isEmpty())
+                throw new IllegalArgumentException("O valor de newbalanceOrig não pode ser nulo nem vazio");
+            Customer origin = new Customer(chunks[3], new BigDecimal(chunks[4]), new BigDecimal(chunks[5]));
+
+            if(chunks[7] == null || chunks[7].isEmpty())
+                throw new IllegalArgumentException("O valor de oldbalanceDest não pode ser nulo nem vazio");
+
+            if(chunks[8] == null || chunks[8].isEmpty())
+                throw new IllegalArgumentException("O valor de newbalanceDest não pode ser nulo nem vazio");
+
+            Customer recipient = new Customer(chunks[6], new BigDecimal(chunks[7]), new BigDecimal(chunks[8]));
+
+            boolean isFraud = "1".equals(chunks[9]);
+            boolean isFlaggedFraud = "1".equals(chunks[10]);
+
+            return Optional.of(new Transaction(step, transactionType, amount, origin, recipient, isFraud, isFlaggedFraud));
+
+        } catch (Exception e) {
+            System.err.println("Erro ao fazer parse: " + line + " | " + e);
+        }
+
+        return Optional.empty();
     }
 
     /**
@@ -47,9 +69,9 @@ public class TransactionIngestor {
      *
      * @deprecated Utilize {@link #read(String)} como substituto.
      */
-    public List<Transaction> readOld(String filename) {
+    public List<Optional<Transaction>> readOld(String filename) {
 
-        List<Transaction> transactions = new ArrayList<>();
+        List<Optional<Transaction>> transactions = new ArrayList<>();
 
         try (BufferedReader reader = Files.newBufferedReader(Path.of(filename))) {
             String line;
