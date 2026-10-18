@@ -1,8 +1,6 @@
 package br.com.zenon.fraud;
 
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.file.Path;
 import java.util.List;
 
 import static br.com.zenon.fraud.TransactionType.*;
@@ -43,6 +41,26 @@ public class Main {
         IO.println(transactionsBadData.size());
 
         transactionsBadData.forEach(IO::println);
+
+        IO.println("----------------------------------------------------------------------------------------------------");
+
+        FraudAnalyzer fraudAnalyzer = new FraudAnalyzer(transactions);
+
+        IO.println(transactions.size());
+        IO.println("1. Total de Fraudes: " + fraudAnalyzer.countFrauds());
+
+        IO.println("2. Top 3 Fraudes de Maior Valor: ");
+        fraudAnalyzer.topHighestValueFrauds(3).stream()
+                .map(BigDecimal::toPlainString)
+                .forEach(IO::println);
+
+        IO.println("3. Clientes Suspeitos:");
+        fraudAnalyzer.findTopSuspiciusClients(5).forEach(IO::println);
+
+        IO.println("4. Prejuízo Total: " + fraudAnalyzer.calculateTotalFraudsLoss());
+
+        IO.println("5. Fraudes por Tipo:");
+        fraudAnalyzer.countFraudsByTypes().forEach((type, count) -> IO.println(" - %s: %d".formatted(type, count)));
 
     }
 }
