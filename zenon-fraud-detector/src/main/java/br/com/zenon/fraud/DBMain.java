@@ -18,7 +18,8 @@ public class DBMain {
         IO.println(transactions.size());
         IO.println("Iniciando adição das transações no BD....");
 
-        transactions.forEach(repository::save);
+//        transactions.forEach(repository::save);
+        repository.saveAll(transactions);
 
         long endTimeSQL = System.nanoTime();
 
